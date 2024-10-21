@@ -1,0 +1,16 @@
+all:
+  hosts:
+    192.168.0.1:
+      ansible_user: foobar
+      static_ip: 192.168.0.100
+      new_hostname: foobar
+      users:
+        - name: foo
+          sudoer: true
+          key: |
+            ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAr... user1@host
+        - name: bar
+          sudoer: false
+          key: |
+            ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAr... user2@host
+    

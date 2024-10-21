@@ -1,0 +1,5 @@
+# Ignore all inventory
+inventory/**
+
+# ..except for example files
+!inventory/**/*.example
