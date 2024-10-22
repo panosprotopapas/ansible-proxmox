@@ -4,6 +4,7 @@ all:
       ansible_user: foobar
       static_ip: 192.168.0.100
       new_hostname: foobar
+      default_new_user_password: "12345678"
       users:
         - name: foo
           sudoer: true
