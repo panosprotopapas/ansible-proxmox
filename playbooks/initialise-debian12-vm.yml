@@ -79,10 +79,10 @@
         state: restarted
 
     - name: Configure static IP - Change iface line
-      lineinfile:
+      replace:
         path: /etc/network/interfaces
-        regexp: "^iface ens18 inet dhcp"
-        line: "iface ens18 inet static"
+        regexp: "^iface (\\S+) inet dhcp"
+        replace: "iface \\1 inet static"
 
     - name: Configure static IP - Change address line
       lineinfile:
