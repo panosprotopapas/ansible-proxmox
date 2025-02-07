@@ -73,6 +73,11 @@
         name: docker
         state: present
 
+    - name: Docker containers should not restart when adding further users in future and restarting the daemon
+      copy:
+        dest: /etc/docker/daemon.json
+        content: { "live-restore": true }
+
     - name: Restart Docker to apply group changes
       service:
         name: docker
