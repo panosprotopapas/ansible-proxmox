@@ -1,0 +1,75 @@
+---
+- name: Setup new VMs on Proxmox
+  hosts: all
+  become: true
+  become_method: sudo
+  gather_facts: false
+
+  vars_files:
+    - ../inventory/hosts.yml
+
+  pre_tasks:
+    - name: Prompt for sudo password
+      pause:
+        prompt: "Enter sudo password for {{ inventory_hostname }}"
+      register: sudo_pass
+
+    - name: Set become password
+      set_fact:
+        ansible_become_password: "{{ sudo_pass.user_input }}"
+
+  tasks:
+    - name: Create users and configure SSH access
+      block:
+        - name: Create users and configure SSH access - Create user accounts
+          user:
+            name: "{{ item.name }}"
+            state: present
+            createhome: true
+            shell: /bin/bash
+          loop: "{{ users }}"
+
+        - name: Create users and configure SSH access - Add public keys to authorized_keys
+          authorized_key:
+            user: "{{ item.name }}"
+            state: present
+            key: "{{ item.key }}"
+          loop: "{{ users }}"
+
+    - name: Grant sudo access to specified users and create default passwords
+      block:
+        - name: Grant sudo access to specified users and create default passwords - Add sudo users to sudo group
+          user:
+            name: "{{ item.name }}"
+            groups: sudo
+            append: true
+          when: item.sudoer
+          loop: "{{ users }}"
+
+        - name: Grant sudo access to specified users and create default passwords - Set default password for all users
+          user:
+            name: "{{ item.name }}"
+            password: "{{ default_new_user_password | password_hash('sha512') }}"
+          loop: "{{ users }}"
+
+    - name: Add users to docker group
+      user:
+        name: "{{ item.name }}"
+        groups: docker
+        append: true
+      loop: "{{ users }}"
+
+    - name: Ensure docker group exists
+      group:
+        name: docker
+        state: present
+
+    - name: Restart Docker to apply group changes
+      service:
+        name: docker
+        state: restarted
+
+    - name: Force users to change password on first login
+      command: "chage -d 0 {{ item.name }}"
+      loop: "{{ users }}"
+      
