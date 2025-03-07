@@ -1,0 +1,13 @@
+# Target host IP address
+target_host: "10.10.20.203"
+
+# User to connect as
+target_user: "inlecomadmin"
+
+# New parent directory for home directories
+new_home_parent_directory: "/storage/home"
+
+# List of users to move
+users:
+  - name: "panos"
+    home_directory: "/home/panos" # Current home directory of the user

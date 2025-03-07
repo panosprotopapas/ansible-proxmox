@@ -1,10 +1,14 @@
 # Ansible Playbooks for Proxmox
 
-This repository includes for now a single Ansible playbook designed for managing VMs on the Proxmox cluster. The playbook automates various tasks such as setting up Docker, configuring users, and managing network settings.
+This repository includes various Ansible playbooks designed for managing VMs on the Proxmox cluster. The playbooks automate different tasks such as setting up Docker, configuring users, and managing network settings.
 
 ## Playbook instructions
 
-- [Initialise Debian 12 VM](docs/initialise-debian12-vm.md)
+- [Initialise Debian 12 VM](docs/debian12-initialise.md)
+- [Add users to Debian 12 VM](docs/debian12-add-users.md)
+- [Mount an extra drive to Debian 12 VM](docs/debian12-mount-drive.md)
+- [Move the Docker root folder of Debian 12 VM](docs/debian12-move-docker-root.md)
+- [Move users's home folders of Debian 12 VM](docs/debian12-move-home-folders.md)
 
 ## Future Plans
 

@@ -1,0 +1,48 @@
+---
+- name: Add users to VM
+  hosts: "{{ target_host }}"
+  remote_user: "{{ target_user }}"
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - ../configs/debian12-move-home-folders.yml
+
+  vars_prompt:
+    - name: "target_password"
+      prompt: "Enter sudo password for user {{ target_user }} of remote machine at {{ target_host }}"
+      private: true
+
+  tasks:
+    - name: Set become password
+      set_fact:
+        ansible_become_password: "{{ target_password }}"
+
+    - name: Ensure the new home directory parent exists
+      file:
+        path: "{{ new_home_parent_directory }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Move the home directory
+      command: "mv {{ item.home_directory }} {{ new_home_parent_directory }}/{{ item.name }}"
+      args:
+        creates: "{{ new_home_parent_directory }}/{{ item.name }}"
+      loop: "{{ users }}"
+
+    - name: Set correct ownership and permissions
+      file:
+        path: "{{ new_home_parent_directory }}/{{ item.name }}"
+        state: directory
+        owner: "{{ item.name }}"
+        group: "{{ item.name }}"
+        mode: "0700"
+        recurse: yes
+      loop: "{{ users }}"
+
+    - name: Update home directory in /etc/passwd
+      command: "usermod -d {{ new_home_parent_directory }}/{{ item.name }} {{ item.name }}"
+      loop: "{{ users }}"
+

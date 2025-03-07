@@ -1,0 +1,11 @@
+# Target host IP address
+target_host: "10.10.20.16"
+
+# User to connect as
+target_user: "inlecomadmin"
+
+# Static IP address to set on the target host
+static_ip: "10.10.20.203"
+
+# New hostname to set on the target host
+new_hostname: "testhost"

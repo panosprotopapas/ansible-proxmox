@@ -1,24 +1,23 @@
 ---
-- name: Setup new VMs on Proxmox
-  hosts: all
+- name: Add users to VM
+  hosts: "{{ target_host }}"
+  remote_user: "{{ target_user }}"
   become: true
-  become_method: sudo
   gather_facts: false
 
   vars_files:
-    - ../inventory/hosts.yml
+    - ../configs/debian12-add-users.yml
 
-  pre_tasks:
-    - name: Prompt for sudo password
-      pause:
-        prompt: "Enter sudo password for {{ inventory_hostname }}"
-      register: sudo_pass
-
-    - name: Set become password
-      set_fact:
-        ansible_become_password: "{{ sudo_pass.user_input }}"
+  vars_prompt:
+    - name: "target_password"
+      prompt: "Enter sudo password for user {{ target_user }} of remote machine at {{ target_host }}"
+      private: true
 
   tasks:
+    - name: Set become password
+      set_fact:
+        ansible_become_password: "{{ target_password }}"
+
     - name: Create users and configure SSH access
       block:
         - name: Create users and configure SSH access - Create user accounts
@@ -49,7 +48,7 @@
         - name: Grant sudo access to specified users and create default passwords - Set default password for all users
           user:
             name: "{{ item.name }}"
-            password: "{{ default_new_user_password | password_hash('sha512') }}"
+            password: "{{ initial_new_user_password | password_hash('sha512') }}"
           loop: "{{ users }}"
 
     - name: Add users to docker group
@@ -72,4 +71,7 @@
     - name: Force users to change password on first login
       command: "chage -d 0 {{ item.name }}"
       loop: "{{ users }}"
-      
+
+    - name: Display message to user
+      debug:
+        msg: "Users added to VM at {{ target_host }}"

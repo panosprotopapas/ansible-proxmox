@@ -1,0 +1,11 @@
+# Target host IP address
+target_host: "10.10.20.203"
+
+# User to connect as
+target_user: "inlecomadmin"
+
+# New Docker root directory
+new_docker_root_directory: "/storage/var/lib/docker/"
+
+# Current Docker root directory
+current_docker_root_directory: "/var/lib/docker/"

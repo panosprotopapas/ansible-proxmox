@@ -1,0 +1,61 @@
+---
+- name: Select and mount a drive
+  hosts: "{{ target_host }}"
+  remote_user: "{{ target_user }}"
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - ../configs/debian12-mount-drive.yml
+
+  vars_prompt:
+    - name: "target_password"
+      prompt: "Enter sudo password for user {{ target_user }} of remote machine at {{ target_host }}"
+      private: true
+
+  tasks:
+    - name: Set become password
+      set_fact:
+        ansible_become_password: "{{ target_password }}"
+
+    - name: Gather block device information
+      ansible.builtin.command: lsblk -n -o NAME,TYPE,MOUNTPOINT
+      register: lsblk_output
+      changed_when: false
+
+    - name: Ensure the partition exists
+      community.general.parted:
+        device: "{{ selected_drive }}"
+        number: 1
+        state: present
+        fs_type: ext4
+
+    - name: Create filesystem on partition
+      filesystem:
+        fstype: ext4
+        dev: "{{ selected_drive }}1"
+
+    - name: Create mount point
+      file:
+        path: "{{ mount_path }}"
+        state: directory
+        mode: "0755"
+
+    - name: Mount the drive temporarily
+      mount:
+        path: "{{ mount_path }}"
+        src: "{{ selected_drive }}1"
+        fstype: ext4
+        state: mounted
+
+    - name: Ensure the drive is mounted persistently in /etc/fstab
+      mount:
+        path: "{{ mount_path }}"
+        src: "{{ selected_drive }}1"
+        fstype: ext4
+        opts: defaults
+        state: present
+
+    - name: Display message to user
+      debug:
+        msg: "Drive mounted at {{ mount_path }} in VM at {{ target_host }}"

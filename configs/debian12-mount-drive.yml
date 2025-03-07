@@ -1,0 +1,11 @@
+# Target host IP address
+target_host: "10.10.20.203"
+
+# User to connect as
+target_user: "inlecomadmin"
+
+# Path where the drive will be mounted
+mount_path: "/vol"
+
+# Drive to be mounted (/dev/sdb is almost certainly the second drive)
+selected_drive: "/dev/sdb"

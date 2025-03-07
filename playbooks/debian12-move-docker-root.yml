@@ -1,0 +1,64 @@
+---
+- name: Move Docker Root Directory
+  hosts: "{{ target_host }}"
+  remote_user: "{{ target_user }}"
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - ../configs/debian12-move-docker-root.yml
+
+  vars_prompt:
+    - name: "target_password"
+      prompt: "Enter sudo password for user {{ target_user }} of remote machine at {{ target_host }}"
+      private: true
+
+  tasks:
+    - name: Set become password
+      set_fact:
+        ansible_become_password: "{{ target_password }}"
+
+    - name: Stop Docker Service
+      systemd:
+        name: docker
+        state: stopped
+
+    - name: Create New Docker Directory
+      file:
+        path: "{{ new_docker_root_directory }}"
+        state: directory
+        mode: "0755"
+
+    - name: Move Docker Data
+      command: rsync -aP "{{ current_docker_root_directory }}" "{{ new_docker_root_directory }}"
+      register: move_docker_data_result
+
+    - name: Remove old Docker data
+      file:
+        path: "{{ current_docker_root_directory }}"
+        state: absent
+      when: move_docker_data_result is succeeded
+
+    - name: Read /etc/docker/daemon.json
+      slurp:
+        src: /etc/docker/daemon.json
+      register: docker_daemon_json
+
+    - name: Decode JSON
+      set_fact:
+        docker_daemon_config: "{{ docker_daemon_json.content | b64decode | from_json }}"
+
+    - name: Merge live-restore key into the config
+      set_fact:
+        docker_daemon_config: "{{ docker_daemon_config | combine({'data-root': new_docker_root_directory}) }}"
+
+    - name: Write updated configuration to /etc/docker/daemon.json
+      copy:
+        content: "{{ docker_daemon_config | to_nice_json }}"
+        dest: /etc/docker/daemon.json
+        mode: "0644"
+
+    - name: Start Docker Service
+      systemd:
+        name: docker
+        state: started

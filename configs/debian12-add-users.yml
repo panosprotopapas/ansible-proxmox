@@ -1,0 +1,15 @@
+# Target host IP address
+target_host: "10.10.20.203"
+
+# User to connect as
+target_user: "inlecomadmin"
+
+# Initial password for new users
+initial_new_user_password: "12345678"
+
+# List of users to add
+users:
+  - name: panos
+    sudoer: true  # Grant sudo privileges to this user
+    key: |  # SSH public key for the user
+      ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGYZwgrIwUb78K4a92nb6ZvsQGP1bL7yknTcGoodqIjPf4Axs6SI4+0eNB2zXuFkJbOEI86iQlwkyLT5weE2ne8NRkOAVsr+EnGZ0Vnjd1DBW+kI0IqQwWwYL7nFf60gBckGwD0/aAPG3gN+8Z9s5AcGFxtkOYHzF+3FAPA+p7oKQnQuXhH7AQ5Xzd3cOyCO2VskGXape0hCw7Q5bIRgVFpGjuBXjOkmWx/Am5H2gpr/61IwQT3sc9av5npy5ZQ824md0ZPskW5HObGFgeo+z25OXGYmew0bjVoDcCwBaoLAGMZq8DDM4JKm+GW/EPbfs0Jb3oeN8GAVqG6TpGscTn inlelab

@@ -1,0 +1,90 @@
+---
+- name: Setup new VMs on Proxmox
+  hosts: "{{ target_host }}"
+  remote_user: "{{ target_user }}"
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - ../configs/debian12-initialise.yml
+
+  vars_prompt:
+    - name: "target_password"
+      prompt: "Enter sudo password for user {{ target_user }} of remote machine at {{ target_host }}"
+      private: true
+
+  tasks:
+    - name: Set become password
+      set_fact:
+        ansible_become_password: "{{ target_password }}"
+
+    - name: Install docker and docker-compose
+      block:
+        - name: Install docker and docker-compose - Download convenience script
+          command: "curl -fsSL https://get.docker.com -o get-docker.sh"
+        - name: Install docker and docker-compose - Execute convenience script
+          command: "sh get-docker.sh"
+        - name: Install docker and docker-compose - Delete convenience script
+          command: "rm get-docker.sh"
+
+    - name: Check if /etc/docker/daemon.json exists
+      stat:
+        path: /etc/docker/daemon.json
+      register: docker_daemon_file
+
+    - name: Create empty JSON if not exists
+      copy:
+        content: "{}"
+        dest: /etc/docker/daemon.json
+        mode: "0644"
+      when: not docker_daemon_file.stat.exists
+
+    - name: Read /etc/docker/daemon.json
+      slurp:
+        src: /etc/docker/daemon.json
+      register: docker_daemon_json
+
+    - name: Decode JSON
+      set_fact:
+        docker_daemon_config: "{{ docker_daemon_json.content | b64decode | from_json }}"
+
+    - name: Merge live-restore key into the config
+      set_fact:
+        docker_daemon_config: "{{ docker_daemon_config | combine({'live-restore': true}) }}"
+
+    - name: Write updated configuration to /etc/docker/daemon.json
+      copy:
+        content: "{{ docker_daemon_config | to_nice_json }}"
+        dest: /etc/docker/daemon.json
+        mode: "0644"
+
+    - name: Restart Docker to apply changes
+      service:
+        name: docker
+        state: restarted
+
+    - name: Configure static IP - Change iface line
+      replace:
+        path: /etc/network/interfaces
+        regexp: "^iface (\\S+) inet dhcp"
+        replace: "iface \\1 inet static"
+
+    - name: Configure static IP - Change address line
+      lineinfile:
+        path: /etc/network/interfaces
+        regexp: "^address <ip>"
+        line: "address {{ static_ip }}"
+
+    - name: Change hostname
+      hostname:
+        name: "{{ new_hostname }}"
+
+    - name: Update /etc/hosts with new hostname
+      lineinfile:
+        path: /etc/hosts
+        regexp: "^127.0.1.1"
+        line: "127.0.1.1\t{{ new_hostname }}"
+
+    - name: Display message to user
+      debug:
+        msg: "Machine configured, restart the machine. Then, {{ target_user }} can SSH to {{ static_ip }}"
